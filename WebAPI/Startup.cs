@@ -12,7 +12,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using WebAPI.Middleware;
 using WebAPI.Services;
+
 
 namespace WebAPI
 {
@@ -20,29 +22,39 @@ namespace WebAPI
     {
         private readonly string _SQLUserId = null;
         private readonly string _SQLPassword = null;
-        private readonly string _connstringSystem = null;
-        private readonly string _connstringApp = null;
-        private readonly ApplicationConnectionString applicationConnectionString;
+        private readonly string _connstringSystem = "";
+        private readonly string _connstringApp = "";
+        private readonly ApplicationConnectionString _applicationConnectionString;
 
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
-            _SQLUserId = Configuration["SQL:UserId"];
-            _SQLPassword = Configuration["SQL:Password"];
 
-            var builderSys = new SqlConnectionStringBuilder(
-                Configuration.GetConnectionString("SQL_System"));
-            builderSys.UserID = _SQLUserId;
-            builderSys.Password = _SQLPassword;
-            _connstringSystem = builderSys.ConnectionString;
+            _SQLUserId = configuration["SQL:UserId"];
+            _SQLPassword = configuration["SQL:Password"];
 
-            var builderApp = new SqlConnectionStringBuilder(
-                Configuration.GetConnectionString("SQL_Application"));
-            builderApp.UserID = _SQLUserId;
-            builderApp.Password = _SQLPassword;
-            _connstringApp = builderApp.ConnectionString;
+            if (!String.IsNullOrEmpty(_SQLUserId) && !String.IsNullOrEmpty(_SQLPassword))
+            {
+                var builderSys = new SqlConnectionStringBuilder(
+                    configuration.GetConnectionString("SQL_System"));
+                builderSys.UserID = _SQLUserId;
+                builderSys.Password = _SQLPassword;
+                _connstringSystem = builderSys.ConnectionString;
 
-            applicationConnectionString = new ApplicationConnectionString(_connstringApp);
+                var builderApp = new SqlConnectionStringBuilder(
+                    configuration.GetConnectionString("SQL_Application"));
+                builderApp.UserID = _SQLUserId;
+                builderApp.Password = _SQLPassword;
+                _connstringApp = builderApp.ConnectionString;
+            }
+            else
+            {
+                var builderSys = new SqlConnectionStringBuilder(configuration.GetConnectionString("SQL_System"));
+                _connstringSystem = builderSys.ConnectionString;
+                var builderApp = new SqlConnectionStringBuilder(configuration.GetConnectionString("SQL_Application"));
+                _connstringApp = builderApp.ConnectionString;
+            }
+
+            _applicationConnectionString = new ApplicationConnectionString(_connstringApp);
             
 
         }
@@ -54,7 +66,7 @@ namespace WebAPI
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
-            services.AddSingleton<IApplicationConnectionString>(applicationConnectionString);
+            services.AddSingleton<IApplicationConnectionString>(_applicationConnectionString);
 
 
         }
@@ -70,15 +82,11 @@ namespace WebAPI
             {
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
+                app.UseMiddleware(typeof(ErrorHandlingMiddleware));
             }
 
             app.UseHttpsRedirection();
             app.UseMvc();
-            //app.Run(async (context) => {
-            //    await context.Response.WriteAsync($"Connection String System:{_connstringSystem}" +
-            //        $"{Environment.NewLine}Connection String App:{_connstringApp}" +
-            //        $"{Environment.NewLine}Environment:{env.EnvironmentName}");
-            //    });
         }
     }
 }

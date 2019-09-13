@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using WebAPI.Services;
+using Dapper;
 
 namespace WebAPI.Controllers
 {
@@ -11,11 +14,18 @@ namespace WebAPI.Controllers
     [ApiController]
     public class ValuesController : ControllerBase
     {
-        private readonly IApplicationConnectionString _applicationConnectionString;
+        private readonly string _applicationConnectionString;
+        private readonly IEnumerable<string> _databasenames;
 
         public ValuesController(IApplicationConnectionString applicationConnectionString)
         {
-            _applicationConnectionString = applicationConnectionString;
+            _applicationConnectionString = applicationConnectionString.ConnectionString;
+
+            // Test for a good DB Connection String and ability to connect to the DB
+                using (IDbConnection cnn = new SqlConnection(_applicationConnectionString))
+                {
+                        _databasenames = cnn.Query<string>("select name from sys.databases");
+                }
         }
 
 
@@ -23,7 +33,15 @@ namespace WebAPI.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<string>> Get()
         {
-            return new string[] { "value1", "value2", _applicationConnectionString.ConnectionString.ToString()};
+            List<string> returnvalues = new List<string>();
+            returnvalues.Add("Value1");
+            returnvalues.Add("Value2");
+            returnvalues.Add(_applicationConnectionString);
+            foreach (string dbname in _databasenames)
+            {
+                returnvalues.Add(dbname);
+            } 
+            return returnvalues;
         }
 
         // GET api/values/5
