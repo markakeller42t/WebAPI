@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using WebAPI.Services;
 using Dapper;
+using Microsoft.ApplicationInsights;
 
 namespace WebAPI.Controllers
 {
@@ -14,11 +15,16 @@ namespace WebAPI.Controllers
     [ApiController]
     public class ValuesController : ControllerBase
     {
+        private readonly TelemetryClient telemetry;
         private readonly string _applicationConnectionString;
         private readonly IEnumerable<string> _databasenames;
 
-        public ValuesController(IApplicationConnectionString applicationConnectionString)
+
+        public ValuesController(IApplicationConnectionString applicationConnectionString,
+                                TelemetryClient telemetry)
         {
+            this.telemetry = telemetry;
+
             _applicationConnectionString = applicationConnectionString.ConnectionString;
 
             // Test for a good DB Connection String and ability to connect to the DB
@@ -33,6 +39,7 @@ namespace WebAPI.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<string>> Get()
         {
+            telemetry.TrackEvent("Get Request in Values Controller");
             List<string> returnvalues = new List<string>();
             returnvalues.Add("Value1");
             returnvalues.Add("Value2");
