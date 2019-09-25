@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using WebAPI.Services;
 using Dapper;
 using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
 
 namespace WebAPI.Controllers
 {

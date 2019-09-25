@@ -9,9 +9,6 @@ namespace WebAPI
 {
     public class AppInsightsCustomTelemetryInitializer : ITelemetryInitializer
     {
-        public void Initialize(ITelemetry telemetry)
-        {
-            telemetry.Context.GlobalProperties["SaaSClient"] = "TestSaaSClient";
-        }
+        public void Initialize(ITelemetry telemetry) => telemetry.Context.GlobalProperties["SaaSClient"] = "TestSaaSClient";
     }
 }
